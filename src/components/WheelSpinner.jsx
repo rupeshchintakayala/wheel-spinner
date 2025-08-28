@@ -4,6 +4,7 @@ const WheelSpinner = ({ names }) => {
   const [isSpinning, setIsSpinning] = useState(false)
   const [winner, setWinner] = useState('')
   const [showResult, setShowResult] = useState(false)
+  const [rotation, setRotation] = useState(0)
   const wheelRef = useRef(null)
 
   // Colors for the wheel segments
@@ -26,8 +27,8 @@ const WheelSpinner = ({ names }) => {
     let targetAngle
     
     if (yasinIndex !== -1) {
-      // Calculate the center angle of Yasin's segment
-      const yasinCenterAngle = yasinIndex * segmentAngle + segmentAngle / 2
+      // Calculate the center angle of Yasin's segment (accounting for -90 degree offset)
+      const yasinCenterAngle = yasinIndex * segmentAngle + segmentAngle / 2 - 90
       // We want the pointer (at top) to point to Yasin's segment
       // The wheel rotates clockwise, so we need to calculate backwards
       targetAngle = 360 - yasinCenterAngle + (Math.random() * 20 - 10) // Add small random variation
@@ -37,12 +38,10 @@ const WheelSpinner = ({ names }) => {
     }
 
     // Add multiple full rotations for dramatic effect
-    const totalRotation = 1800 + targetAngle // 5 full rotations + target angle
+    const totalRotation = rotation + 1800 + targetAngle // Current rotation + 5 full rotations + target angle
 
-    // Apply the rotation
-    if (wheelRef.current) {
-      wheelRef.current.style.transform = `rotate(${totalRotation}deg)`
-    }
+    // Apply the rotation using state to trigger CSS transition
+    setRotation(totalRotation)
 
     // Show result after animation completes
     setTimeout(() => {
@@ -55,9 +54,7 @@ const WheelSpinner = ({ names }) => {
   const resetWheel = () => {
     setShowResult(false)
     setWinner('')
-    if (wheelRef.current) {
-      wheelRef.current.style.transform = 'rotate(0deg)'
-    }
+    setRotation(0)
   }
 
   return (
@@ -65,8 +62,8 @@ const WheelSpinner = ({ names }) => {
       {/* Wheel Container */}
       <div className="relative">
         {/* Pointer */}
-        <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-2 z-10">
-          <div className="w-0 h-0 border-l-4 border-r-4 border-b-8 border-l-transparent border-r-transparent border-b-red-500"></div>
+        <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1 z-10">
+          <div className="w-0 h-0 border-l-6 border-r-6 border-b-12 border-l-transparent border-r-transparent border-b-red-600 drop-shadow-lg"></div>
         </div>
 
         {/* Wheel */}
@@ -76,12 +73,16 @@ const WheelSpinner = ({ names }) => {
             width="300"
             height="300"
             viewBox="0 0 300 300"
-            className={`transition-transform duration-[3000ms] ease-out ${isSpinning ? '' : 'hover:scale-105'}`}
-            style={{ transformOrigin: 'center' }}
+            className={`transition-transform duration-[3000ms] ease-wheel ${isSpinning ? '' : 'hover:scale-105'}`}
+            style={{ 
+              transformOrigin: 'center',
+              transform: `rotate(${rotation}deg)`
+            }}
           >
             {names.map((name, index) => {
-              const startAngle = index * segmentAngle
-              const endAngle = (index + 1) * segmentAngle
+              // Start from top (12 o'clock) by subtracting 90 degrees
+              const startAngle = index * segmentAngle - 90
+              const endAngle = (index + 1) * segmentAngle - 90
               const startAngleRad = (startAngle * Math.PI) / 180
               const endAngleRad = (endAngle * Math.PI) / 180
 
